@@ -38,7 +38,7 @@ jobs:
 
           cat > PKGBUILD << PKGEOF
           # Maintainer: psdk <psdkjoon@gmail.com>
-          pkgname=parch
+          pkgname=psdk-arch
           pkgver=${VERSION}
           pkgrel=1
           pkgdesc="psdk's arch installer and configer"
@@ -67,7 +67,7 @@ jobs:
       - name: Publish to the AUR
         uses: KSXGitHub/github-actions-deploy-aur@v3
         with:
-          pkgname: parch
+          pkgname: psdk-arch
           pkgbuild: PKGBUILD
           commit_username: psdkjoon
           commit_email: psdkjoon@gmail.com
