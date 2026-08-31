@@ -101,4 +101,4 @@ jobs:
       - name: Upload binary to bucket
         run: |
           chmod +x dist/parch
-          s3cmd put --acl-public --guess-mime-type dist/parch "s3://psdk-arch/parch-linux-x64/parch"
+          s3cmd put --acl-public --guess-mime-type --delete-removed --no-mime-magic dist/parch "s3://psdk-arch/parch"
