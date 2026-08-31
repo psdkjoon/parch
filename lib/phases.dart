@@ -270,7 +270,13 @@ Future<void> phaseChroot(AppConfig c, String configPath) async {
   stdout.writeln('\nWrote /boot/loader/entries/arch.conf with:\n$options');
 
   await sh('mkinitcpio -P');
-  await sh('systemctl enable NetworkManager');
+  if (c.basePackages.contains('networkmanager')) {
+    await sh('systemctl enable NetworkManager');
+  } else {
+    stdout.writeln(
+      '  (skipping: networkmanager not in your base packages)',
+    );
+  }
 
   await carryForward(configPath, '/home/${c.username}');
   await sh(
@@ -315,9 +321,13 @@ Future<void> phasePostReboot(AppConfig c, String configPath) async {
   await sh('git config --global user.email "${c.gitEmail}"');
   await sh('git config --global init.defaultBranch main');
 
-  section('GitHub CLI auth');
-  await sh('gh auth login');
-  await sh('gh auth setup-git');
+  if (c.officialPackages.contains('github-cli')) {
+    section('GitHub CLI auth');
+    if (askBool('Log into GitHub with gh now?', fallback: true)) {
+      await sh('gh auth login');
+      await sh('gh auth setup-git');
+    }
+  }
 
   if (c.installDotfiles) {
     section('Dotfiles');
@@ -342,49 +352,85 @@ Future<void> phasePostReboot(AppConfig c, String configPath) async {
 
   if (c.installCustomTools) {
     section('Custom installers');
-    await sh('mkdir -p ~/Downloads');
-    for (final entry in c.customTools.entries) {
-      final name = entry.key;
-      final repo = entry.value['repo']!;
-      final asset = entry.value['asset']!;
-      final url = await latestReleaseAssetUrl(repo, asset);
-      if (url == null) {
-        stderr.writeln(
-          '!! Could not find asset "$asset" in the latest release of '
-          '$repo - skipping $name.',
-        );
-        continue;
-      }
-      await sh(
-        'cd ~/Downloads && aria2c -x16 -s16 "$url" -o "$name-installer" && '
-        'chmod +x "./$name-installer" && "./$name-installer" && '
-        'rm "./$name-installer"',
+    if (!c.officialPackages.contains('aria2')) {
+      stderr.writeln(
+        '!! aria2 not in your official packages - skipping custom tool downloads.',
       );
+    } else {
+      await sh('mkdir -p ~/Downloads');
+      for (final entry in c.customTools.entries) {
+        final name = entry.key;
+        final repo = entry.value['repo']!;
+        final asset = entry.value['asset']!;
+        final url = await latestReleaseAssetUrl(repo, asset);
+        if (url == null) {
+          stderr.writeln(
+            '!! Could not find asset "$asset" in the latest release of '
+            '$repo - skipping $name.',
+          );
+          continue;
+        }
+        await sh(
+          'cd ~/Downloads && aria2c -x16 -s16 "$url" -o "$name-installer" && '
+          'chmod +x "./$name-installer" && "./$name-installer" && '
+          'rm "./$name-installer"',
+        );
+      }
     }
   }
 
   if (c.installFlutter) {
     section('Flutter');
-    final flutterFile = c.flutterUrl.split('/').last;
-    await sh(
-      'cd ~/Downloads && wget ${c.flutterUrl} && '
-      '7z x $flutterFile && mkdir -p ~/dev && mv flutter ~/dev/ && '
-      'rm $flutterFile',
-    );
-    await sh(
-      'cd ~/git && '
-      '(test -d flutter-tmpl || git clone ${c.flutterTemplateRepo}) && '
-      'rm -rf ~/dev/flutter/packages/flutter_tools/templates/app '
-      '~/dev/flutter/packages/flutter_tools/templates/template_manifest.json'
-      ' && cp -r flutter-tmpl/* '
-      '~/dev/flutter/packages/flutter_tools/templates/',
-    );
+    final missingForFlutter = [
+      if (!c.officialPackages.contains('wget')) 'wget',
+      if (!c.officialPackages.contains('p7zip')) 'p7zip',
+    ];
+    if (missingForFlutter.isNotEmpty) {
+      stderr.writeln(
+        '!! Skipping Flutter setup - missing package(s): '
+        '${missingForFlutter.join(', ')}.',
+      );
+    } else {
+      final flutterFile = c.flutterUrl.split('/').last;
+      await sh(
+        'cd ~/Downloads && wget ${c.flutterUrl} && '
+        '7z x $flutterFile && mkdir -p ~/dev && mv flutter ~/dev/ && '
+        'rm $flutterFile',
+      );
+      await sh(
+        'cd ~/git && '
+        '(test -d flutter-tmpl || git clone ${c.flutterTemplateRepo}) && '
+        'rm -rf ~/dev/flutter/packages/flutter_tools/templates/app '
+        '~/dev/flutter/packages/flutter_tools/templates/template_manifest.json'
+        ' && cp -r flutter-tmpl/* '
+        '~/dev/flutter/packages/flutter_tools/templates/',
+      );
 
-    if (c.androidComponents.isNotEmpty) {
-      section('Android SDK components');
-      for (final comp in c.androidComponents) {
-        await sh('asd $comp');
+      if (c.androidComponents.isNotEmpty) {
+        if (c.installCustomTools && c.customTools.containsKey('asd')) {
+          section('Android SDK components');
+          for (final comp in c.androidComponents) {
+            await sh('asd $comp');
+          }
+        } else {
+          stderr.writeln(
+            '!! Skipping Android SDK components - the "asd" custom tool isn\'t configured.',
+          );
+        }
       }
+    }
+  }
+
+  if (c.packageHooks.isNotEmpty) {
+    section('Package hooks');
+    for (final entry in c.packageHooks.entries) {
+      if (!pkgSelected(c, entry.key)) {
+        stderr.writeln(
+          '!! Skipping hook for "${entry.key}" - not in your package lists.',
+        );
+        continue;
+      }
+      await sh(entry.value, check: false);
     }
   }
 

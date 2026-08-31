@@ -36,6 +36,7 @@ class AppConfig {
   List<String> basePackages;
   List<String> officialPackages;
   List<String> aurPackages;
+  Map<String, String> packageHooks;
 
   // Git
   String gitName;
@@ -76,6 +77,7 @@ class AppConfig {
     required this.basePackages,
     required this.officialPackages,
     required this.aurPackages,
+    required this.packageHooks,
     required this.gitName,
     required this.gitEmail,
     required this.installDotfiles,
@@ -113,6 +115,7 @@ class AppConfig {
     'basePackages': basePackages,
     'officialPackages': officialPackages,
     'aurPackages': aurPackages,
+    'packageHooks': packageHooks,
     'gitName': gitName,
     'gitEmail': gitEmail,
     'installDotfiles': installDotfiles,
@@ -150,6 +153,7 @@ class AppConfig {
     basePackages: List<String>.from(j['basePackages']),
     officialPackages: List<String>.from(j['officialPackages']),
     aurPackages: List<String>.from(j['aurPackages']),
+    packageHooks: Map<String, String>.from(j['packageHooks']),
     gitName: j['gitName'],
     gitEmail: j['gitEmail'],
     installDotfiles: j['installDotfiles'],
@@ -317,6 +321,27 @@ class AppConfig {
       'mpd-mpris',
     ]);
 
+    section('Package hooks');
+    final selectedPackages = {
+      ...basePackages,
+      ...officialPackages,
+      ...aurPackages,
+    };
+    var packageHooks = <String, String>{};
+    while (askBool(
+      packageHooks.isEmpty
+          ? 'Add a package hook?'
+          : 'Add another package hook?',
+      fallback: false,
+    )) {
+      final pkg = askString('Package name (as it appears in a list above)');
+      if (!selectedPackages.contains(pkg)) {
+        stdout.writeln('  (note: "$pkg" isn\'t in your package lists yet)');
+      }
+      final cmd = askString('Shell command to run once $pkg is installed');
+      packageHooks[pkg] = cmd;
+    }
+
     section('Git identity');
     final gitName = askString('Git user.name', fallback: 'psdkjoon');
     final gitEmail = askString(
@@ -428,6 +453,7 @@ class AppConfig {
       basePackages: basePackages,
       officialPackages: officialPackages,
       aurPackages: aurPackages,
+      packageHooks: packageHooks,
       gitName: gitName,
       gitEmail: gitEmail,
       installDotfiles: installDotfiles,
@@ -442,6 +468,11 @@ class AppConfig {
     );
   }
 }
+
+bool pkgSelected(AppConfig c, String pkg) =>
+    c.basePackages.contains(pkg) ||
+    c.officialPackages.contains(pkg) ||
+    c.aurPackages.contains(pkg);
 
 String partitionSuffix(String disk) {
   final base = disk.split('/').last;
