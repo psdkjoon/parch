@@ -75,12 +75,18 @@ jobs:
           ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
           commit_message: "Update to ${{ env.VERSION }}"
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: parch-linux-x64
+          path: dist
+
       - name: Install s3cmd
         run: sudo apt-get update -y && sudo apt-get install -y s3cmd
+
       - name: Write s3cmd config
         run: |
           cat > "$HOME/.s3cfg" <<EOF
@@ -92,13 +98,7 @@ jobs:
           use_https = True
           EOF
 
-      - name: Sync to bucket
+      - name: Upload binary to bucket
         run: |
-          s3cmd sync \
-            --acl-public \
-            --delete-removed \
-            --guess-mime-type \
-            --no-mime-magic \
-            --exclude '.git/*' \
-            --exclude '.github/*' \
-            ./ "s3://psdk-arch/"
+          chmod +x dist/parch
+          s3cmd put --acl-public --guess-mime-type dist/parch "s3://psdk-arch/parch-linux-x64/parch"
