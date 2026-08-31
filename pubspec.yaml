@@ -1,6 +1,6 @@
-name: parch
+name: psdk_arch
 description: psdk's arch installer and configer
-version: 1.0.1
+version: 2.0.0
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

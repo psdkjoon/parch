@@ -1,8 +1,9 @@
-name: Build and Publish to AUR
+name: Build and Publish
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -73,3 +74,31 @@ jobs:
           commit_email: psdkjoon@gmail.com
           ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
           commit_message: "Update to ${{ env.VERSION }}"
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Install s3cmd
+        run: sudo apt-get update -y && sudo apt-get install -y s3cmd
+      - name: Write s3cmd config
+        run: |
+          cat > "$HOME/.s3cfg" <<EOF
+          [default]
+          access_key = ${{ secrets.ARVAN_ACCESS_KEY }}
+          secret_key = ${{ secrets.ARVAN_SECRET_KEY }}
+          host_base = https://s3.ir-thr-at1.arvanstorage.ir
+          host_bucket = https://s3.ir-thr-at1.arvanstorage.ir
+          use_https = True
+          EOF
+
+      - name: Sync to bucket
+        run: |
+          s3cmd sync \
+            --acl-public \
+            --delete-removed \
+            --guess-mime-type \
+            --no-mime-magic \
+            --exclude '.git/*' \
+            --exclude '.github/*' \
+            ./ "s3://psdk-arch/"
