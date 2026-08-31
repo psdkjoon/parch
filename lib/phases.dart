@@ -428,7 +428,7 @@ Future<void> phasePostReboot(AppConfig c, String configPath) async {
     } else {
       final flutterFile = c.flutterUrl.split('/').last;
       await sh(
-        'cd ~/Downloads && wget ${c.flutterUrl} && '
+        'mkdir -p ~/Downloads && cd ~/Downloads && wget ${c.flutterUrl} && '
         '7z x $flutterFile && mkdir -p ~/dev && mv flutter ~/dev/ && '
         'rm $flutterFile',
       );
