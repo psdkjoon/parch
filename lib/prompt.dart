@@ -52,16 +52,26 @@ List<String> askList(String question, List<String> defaults) {
   stdout.writeln('$question');
   stdout.writeln('  Default: ${defaults.join(', ')}');
   stdout.write(
-    '  Press enter to keep it, or type a replacement '
-    '(comma-separated): ',
+    '  Press enter to keep it, or edit with +pkg to add / -pkg to remove '
+    '(comma-separated, e.g. "-thefuck,+fzf"): ',
   );
   final line = (stdin.readLineSync() ?? '').trim();
   if (line.isEmpty) return List.of(defaults);
-  return line
-      .split(',')
-      .map((e) => e.trim())
-      .where((e) => e.isNotEmpty)
-      .toList();
+  final result = List<String>.of(defaults);
+  for (final rawToken in line.split(',')) {
+    final token = rawToken.trim();
+    if (token.isEmpty) continue;
+    if (token.startsWith('-')) {
+      final pkg = token.substring(1).trim();
+      result.remove(pkg);
+    } else if (token.startsWith('+')) {
+      final pkg = token.substring(1).trim();
+      if (pkg.isNotEmpty && !result.contains(pkg)) result.add(pkg);
+    } else if (!result.contains(token)) {
+      result.add(token);
+    }
+  }
+  return result;
 }
 
 void section(String title) {

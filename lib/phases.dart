@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'config.dart';
@@ -60,6 +61,31 @@ List<String> sessionPackages(AppConfig c) {
   return pkgs;
 }
 
+Future<String?> latestReleaseAssetUrl(String repo, String assetName) async {
+  final client = HttpClient();
+  try {
+    final request = await client.getUrl(
+      Uri.parse('https://api.github.com/repos/$repo/releases/latest'),
+    );
+    request.headers.set('User-Agent', 'parch');
+    request.headers.set('Accept', 'application/vnd.github+json');
+    final response = await request.close();
+    if (response.statusCode != 200) return null;
+    final body = await response.transform(utf8.decoder).join();
+    final json = jsonDecode(body) as Map<String, dynamic>;
+    final assets = json['assets'] as List<dynamic>? ?? [];
+    for (final asset in assets) {
+      if (asset['name'] == assetName) {
+        return asset['browser_download_url'] as String?;
+      }
+    }
+  } catch (_) {
+  } finally {
+    client.close();
+  }
+  return null;
+}
+
 Future<void> phaseLive(AppConfig c, String configPath) async {
   section('Console setup');
   await sh('setfont ${c.consoleFont}');
@@ -67,16 +93,39 @@ Future<void> phaseLive(AppConfig c, String configPath) async {
   await sh('ping -c1 archlinux.org', check: false);
 
   section(
-    'Partitioning (interactive - create partitions matching '
-    'bootPart/rootPart from your answers)',
+    'Partitioning (automatic - GPT on ${c.rootDisk}: EFI ${c.efiSize} + '
+    'root with the rest of the disk)',
   );
-  await sh('fdisk ${c.rootDisk}');
+  final proceed = askBool(
+    'This will WIPE ALL PARTITIONS on ${c.rootDisk} and create '
+    '${c.bootPart} (EFI, ${c.efiSize}) + ${c.rootPart} (root). Continue?',
+    fallback: true,
+  );
+  if (!proceed) {
+    stderr.writeln('Aborted before touching the disk.');
+    exit(1);
+  }
+  await sh('sgdisk --zap-all ${c.rootDisk}');
+  await sh('sgdisk -n1:0:+${c.efiSize} -t1:ef00 -c1:EFI ${c.rootDisk}');
+  await sh('sgdisk -n2:0:0 -t2:8300 -c2:root ${c.rootDisk}');
+  await sh('partprobe ${c.rootDisk}', check: false);
+
   if (c.encryptionEnabled && c.useUsbKeyfile) {
-    stdout.writeln('Opening fdisk on ${c.usbDisk} for the keyfile USB.');
-    await sh('fdisk ${c.usbDisk}');
+    final proceedUsb = askBool(
+      'This will WIPE ALL PARTITIONS on ${c.usbDisk} and create '
+      '${c.usbPart} for the keyfile. Continue?',
+      fallback: false,
+    );
+    if (!proceedUsb) {
+      stderr.writeln('Aborted before touching the USB disk.');
+      exit(1);
+    }
+    await sh('sgdisk --zap-all ${c.usbDisk}');
+    await sh('sgdisk -n1:0:0 -t1:0700 -c1:KEYUSB ${c.usbDisk}');
+    await sh('partprobe ${c.usbDisk}', check: false);
   }
 
-  section('Filesystems${c.encryptionEnabled ? " + LUKS" : ""}');
+  section('Filesystems${c.encryptionEnabled ? " + LUKS2" : ""}');
   await sh('mkfs.fat -F32 ${c.bootPart}');
 
   String rootMapped;
@@ -89,12 +138,12 @@ Future<void> phaseLive(AppConfig c, String configPath) async {
   }
   await sh('mkfs.ext4 $rootMapped');
   await sh('mount $rootMapped /mnt');
-  await sh('mount --mkdir ${c.bootPart} /mnt/boot');
+  await sh('mount -m ${c.bootPart} /mnt/boot');
 
   if (c.encryptionEnabled && c.useUsbKeyfile) {
-    section('LUKS keyfile on USB');
+    section('LUKS2 keyfile on USB');
     await sh('mkfs.fat -F32 ${c.usbPart}');
-    await sh('mount --mkdir ${c.usbPart} /mnt/keyusb');
+    await sh('mount -m ${c.usbPart} /mnt/keyusb');
     await sh(
       'dd if=/dev/urandom of=/mnt/keyusb/${c.keyfileName} '
       'bs=4096 count=1',
@@ -116,7 +165,7 @@ Future<void> phaseLive(AppConfig c, String configPath) async {
   stdout.writeln(
     '\nDone. Now:\n'
     '  arch-chroot /mnt\n'
-    '  cd /root && ./parch chroot',
+    '  ./parch chroot',
   );
 }
 
@@ -250,6 +299,12 @@ Future<void> phasePostReboot(AppConfig c, String configPath) async {
     await sh('yay -S --noconfirm ${c.aurPackages.join(' ')}');
   }
 
+  if (c.officialPackages.contains('mpd')) {
+    section('MPD');
+    await sh('mkdir -p ~/.config/mpd/playlists ~/Music', check: false);
+    await sh('systemctl --user enable --now mpd.service', check: false);
+  }
+
   section('git config');
   await sh(
     'git config --global alias.lg "log --graph --pretty=format:'
@@ -266,13 +321,13 @@ Future<void> phasePostReboot(AppConfig c, String configPath) async {
 
   if (c.installDotfiles) {
     section('Dotfiles');
-    final repoName = c.repoUrl.split('/').last;
+    final repoName = c.dotfilesRepoUrl.split('/').last;
     await sh(
       'mkdir -p ~/git && cd ~/git && '
-      '(test -d $repoName || git clone ${c.repoUrl})',
+      '(test -d $repoName || git clone ${c.dotfilesRepoUrl})',
     );
     await sh(
-      'mkdir -p ~/.config && cp -r ~/git/$repoName/dotfiles/* '
+      'mkdir -p ~/.config && cp -r ~/git/$repoName/${c.dotfilesPath}/* '
       '~/.config/',
     );
     await sh('mv ~/.config/zsh/.zshrc ~/ 2>/dev/null || true');
@@ -288,11 +343,22 @@ Future<void> phasePostReboot(AppConfig c, String configPath) async {
   if (c.installCustomTools) {
     section('Custom installers');
     await sh('mkdir -p ~/Downloads');
-    for (final entry in c.customInstallers.entries) {
-      final file = entry.value.split('/').last;
+    for (final entry in c.customTools.entries) {
+      final name = entry.key;
+      final repo = entry.value['repo']!;
+      final asset = entry.value['asset']!;
+      final url = await latestReleaseAssetUrl(repo, asset);
+      if (url == null) {
+        stderr.writeln(
+          '!! Could not find asset "$asset" in the latest release of '
+          '$repo - skipping $name.',
+        );
+        continue;
+      }
       await sh(
-        'cd ~/Downloads && aria2c -x16 -s16 ${entry.value} && '
-        'chmod +x ./$file && ./$file && rm ./$file',
+        'cd ~/Downloads && aria2c -x16 -s16 "$url" -o "$name-installer" && '
+        'chmod +x "./$name-installer" && "./$name-installer" && '
+        'rm "./$name-installer"',
       );
     }
   }

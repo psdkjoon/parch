@@ -16,6 +16,7 @@ class AppConfig {
   bool encryptionEnabled;
   bool useUsbKeyfile;
   String rootDisk;
+  String efiSize;
   String bootPart;
   String rootPart;
   String mapperName;
@@ -42,9 +43,10 @@ class AppConfig {
 
   // Dotfiles / extras
   bool installDotfiles;
-  String repoUrl;
+  String dotfilesRepoUrl;
+  String dotfilesPath;
   bool installCustomTools;
-  Map<String, String> customInstallers;
+  Map<String, Map<String, String>> customTools;
   bool installFlutter;
   String flutterUrl;
   String flutterTemplateRepo;
@@ -60,6 +62,7 @@ class AppConfig {
     required this.encryptionEnabled,
     required this.useUsbKeyfile,
     required this.rootDisk,
+    required this.efiSize,
     required this.bootPart,
     required this.rootPart,
     required this.mapperName,
@@ -76,9 +79,10 @@ class AppConfig {
     required this.gitName,
     required this.gitEmail,
     required this.installDotfiles,
-    required this.repoUrl,
+    required this.dotfilesRepoUrl,
+    required this.dotfilesPath,
     required this.installCustomTools,
-    required this.customInstallers,
+    required this.customTools,
     required this.installFlutter,
     required this.flutterUrl,
     required this.flutterTemplateRepo,
@@ -86,74 +90,80 @@ class AppConfig {
   });
 
   Map<String, dynamic> toJson() => {
-        'hostname': hostname,
-        'username': username,
-        'timezone': timezone,
-        'locale': locale,
-        'keymap': keymap,
-        'consoleFont': consoleFont,
-        'encryptionEnabled': encryptionEnabled,
-        'useUsbKeyfile': useUsbKeyfile,
-        'rootDisk': rootDisk,
-        'bootPart': bootPart,
-        'rootPart': rootPart,
-        'mapperName': mapperName,
-        'usbDisk': usbDisk,
-        'usbPart': usbPart,
-        'keyfileName': keyfileName,
-        'loginMethod': loginMethod,
-        'session': session,
-        'autostartOnTty': autostartOnTty,
-        'nopasswdSudo': nopasswdSudo,
-        'basePackages': basePackages,
-        'officialPackages': officialPackages,
-        'aurPackages': aurPackages,
-        'gitName': gitName,
-        'gitEmail': gitEmail,
-        'installDotfiles': installDotfiles,
-        'repoUrl': repoUrl,
-        'installCustomTools': installCustomTools,
-        'customInstallers': customInstallers,
-        'installFlutter': installFlutter,
-        'flutterUrl': flutterUrl,
-        'flutterTemplateRepo': flutterTemplateRepo,
-        'androidComponents': androidComponents,
-      };
+    'hostname': hostname,
+    'username': username,
+    'timezone': timezone,
+    'locale': locale,
+    'keymap': keymap,
+    'consoleFont': consoleFont,
+    'encryptionEnabled': encryptionEnabled,
+    'useUsbKeyfile': useUsbKeyfile,
+    'rootDisk': rootDisk,
+    'efiSize': efiSize,
+    'bootPart': bootPart,
+    'rootPart': rootPart,
+    'mapperName': mapperName,
+    'usbDisk': usbDisk,
+    'usbPart': usbPart,
+    'keyfileName': keyfileName,
+    'loginMethod': loginMethod,
+    'session': session,
+    'autostartOnTty': autostartOnTty,
+    'nopasswdSudo': nopasswdSudo,
+    'basePackages': basePackages,
+    'officialPackages': officialPackages,
+    'aurPackages': aurPackages,
+    'gitName': gitName,
+    'gitEmail': gitEmail,
+    'installDotfiles': installDotfiles,
+    'dotfilesRepoUrl': dotfilesRepoUrl,
+    'dotfilesPath': dotfilesPath,
+    'installCustomTools': installCustomTools,
+    'customTools': customTools,
+    'installFlutter': installFlutter,
+    'flutterUrl': flutterUrl,
+    'flutterTemplateRepo': flutterTemplateRepo,
+    'androidComponents': androidComponents,
+  };
 
   static AppConfig fromJson(Map<String, dynamic> j) => AppConfig(
-        hostname: j['hostname'],
-        username: j['username'],
-        timezone: j['timezone'],
-        locale: j['locale'],
-        keymap: j['keymap'],
-        consoleFont: j['consoleFont'],
-        encryptionEnabled: j['encryptionEnabled'],
-        useUsbKeyfile: j['useUsbKeyfile'],
-        rootDisk: j['rootDisk'],
-        bootPart: j['bootPart'],
-        rootPart: j['rootPart'],
-        mapperName: j['mapperName'],
-        usbDisk: j['usbDisk'],
-        usbPart: j['usbPart'],
-        keyfileName: j['keyfileName'],
-        loginMethod: j['loginMethod'],
-        session: j['session'],
-        autostartOnTty: j['autostartOnTty'],
-        nopasswdSudo: j['nopasswdSudo'],
-        basePackages: List<String>.from(j['basePackages']),
-        officialPackages: List<String>.from(j['officialPackages']),
-        aurPackages: List<String>.from(j['aurPackages']),
-        gitName: j['gitName'],
-        gitEmail: j['gitEmail'],
-        installDotfiles: j['installDotfiles'],
-        repoUrl: j['repoUrl'],
-        installCustomTools: j['installCustomTools'],
-        customInstallers: Map<String, String>.from(j['customInstallers']),
-        installFlutter: j['installFlutter'],
-        flutterUrl: j['flutterUrl'],
-        flutterTemplateRepo: j['flutterTemplateRepo'],
-        androidComponents: List<String>.from(j['androidComponents']),
-      );
+    hostname: j['hostname'],
+    username: j['username'],
+    timezone: j['timezone'],
+    locale: j['locale'],
+    keymap: j['keymap'],
+    consoleFont: j['consoleFont'],
+    encryptionEnabled: j['encryptionEnabled'],
+    useUsbKeyfile: j['useUsbKeyfile'],
+    rootDisk: j['rootDisk'],
+    efiSize: j['efiSize'],
+    bootPart: j['bootPart'],
+    rootPart: j['rootPart'],
+    mapperName: j['mapperName'],
+    usbDisk: j['usbDisk'],
+    usbPart: j['usbPart'],
+    keyfileName: j['keyfileName'],
+    loginMethod: j['loginMethod'],
+    session: j['session'],
+    autostartOnTty: j['autostartOnTty'],
+    nopasswdSudo: j['nopasswdSudo'],
+    basePackages: List<String>.from(j['basePackages']),
+    officialPackages: List<String>.from(j['officialPackages']),
+    aurPackages: List<String>.from(j['aurPackages']),
+    gitName: j['gitName'],
+    gitEmail: j['gitEmail'],
+    installDotfiles: j['installDotfiles'],
+    dotfilesRepoUrl: j['dotfilesRepoUrl'] ?? j['repoUrl'],
+    dotfilesPath: j['dotfilesPath'],
+    installCustomTools: j['installCustomTools'],
+    customTools: (j['customTools'] as Map<String, dynamic>? ?? {}).map(
+      (k, v) => MapEntry(k, Map<String, String>.from(v as Map)),
+    ),
+    installFlutter: j['installFlutter'],
+    flutterUrl: j['flutterUrl'],
+    flutterTemplateRepo: j['flutterTemplateRepo'],
+    androidComponents: List<String>.from(j['androidComponents']),
+  );
 
   static Future<AppConfig> load(String path) async {
     final content = await File(path).readAsString();
@@ -171,24 +181,30 @@ class AppConfig {
     final hostname = askString('Hostname for this machine');
     final username = askString('Username', fallback: 'psdk');
     final timezone = askString(
-      'Timezone (e.g. Asia/Baku)',
-      fallback: 'Asia/Baku',
+      'Timezone (e.g. Asia/Tehran)',
+      fallback: 'Asia/Tehran',
     );
     final locale = askString('Locale', fallback: 'en_US.UTF-8');
     final keymap = askString('Console keymap', fallback: 'us');
     final consoleFont = askString('Console font', fallback: 'ter-132b');
 
     section('Disk');
-    final rootDisk = askString(
-      'Target disk (e.g. /dev/nvme0n1)',
-      fallback: '/dev/nvme0n1',
+    final rootDisk = await pickDisk();
+    final efiSize = askString(
+      'EFI partition size (rest of the disk becomes root)',
+      fallback: '1GiB',
     );
-    final bootPart = askString('EFI/boot partition', fallback: '${rootDisk}p1');
-    final rootPart = askString('Root partition', fallback: '${rootDisk}p2');
+    final suffix = partitionSuffix(rootDisk);
+    final bootPart = '$rootDisk${suffix}1';
+    final rootPart = '$rootDisk${suffix}2';
+    stdout.writeln(
+      '  -> Will auto-partition $rootDisk: $bootPart (EFI, $efiSize) + '
+      '$rootPart (root, rest of disk). The whole disk will be wiped.',
+    );
 
     section('Encryption');
     final encryptionEnabled = askBool(
-      'Enable full-disk encryption (LUKS)?',
+      'Enable full-disk encryption (LUKS2)?',
       fallback: true,
     );
     var useUsbKeyfile = false;
@@ -213,13 +229,10 @@ class AppConfig {
     }
 
     section('Login & session');
-    final loginMethod = askChoice(
-        'How do you want to log in?',
-        [
-          'tty',
-          'greetd',
-        ],
-        fallback: 1);
+    final loginMethod = askChoice('How do you want to log in?', [
+      'tty',
+      'greetd',
+    ], fallback: 1);
     final session = askChoice(
       loginMethod == 'greetd'
           ? 'What should greetd launch after login?'
@@ -254,50 +267,52 @@ class AppConfig {
     ]);
     final officialPackages =
         askList('Official repo packages (installed after reboot)', [
-      'git',
-      'github-cli',
-      'wget',
-      'curl',
-      'yazi',
-      'btop',
-      'ripgrep',
-      'fd',
-      'zsh',
-      'lazygit',
-      'lsd',
-      'zoxide',
-      'aria2',
-      'cloc',
-      'kitty',
-      'ffmpeg',
-      'imagemagick',
-      'bat',
-      'cava',
-      'swaync',
-      'dust',
-      'firefox',
-      'p7zip',
-      'jdk-openjdk',
-      'fzf',
-      'yt-dlp',
-      'fcitx5',
-      'fcitx5-qt',
-      'fcitx5-gtk',
-      'gnome-keyring',
-      'qt5ct',
-      'qt6ct',
-      'playerctl',
-      'bluez',
-      'bluez-utils',
-      'pipewire',
-      'pipewire-pulse',
-      'wireplumber',
-      'nerd-fonts',
-    ]);
+          'git',
+          'github-cli',
+          'wget',
+          'curl',
+          'yazi',
+          'btop',
+          'ripgrep',
+          'fd',
+          'zsh',
+          'lazygit',
+          'lsd',
+          'zoxide',
+          'aria2',
+          'cloc',
+          'kitty',
+          'ffmpeg',
+          'imagemagick',
+          'bat',
+          'cava',
+          'swaync',
+          'dust',
+          'firefox',
+          'p7zip',
+          'jdk-openjdk',
+          'fzf',
+          'yt-dlp',
+          'fcitx5',
+          'fcitx5-qt',
+          'fcitx5-gtk',
+          'gnome-keyring',
+          'qt5ct',
+          'qt6ct',
+          'playerctl',
+          'bluez',
+          'bluez-utils',
+          'pipewire',
+          'pipewire-pulse',
+          'wireplumber',
+          'nerd-fonts',
+          'mpd',
+          'mpc',
+          'rmpc',
+        ]);
     final aurPackages = askList('AUR packages (installed via yay)', [
       'oh-my-posh',
       'hyprlauncher',
-      'thefuck',
       'gping',
       'mpd-mpris',
     ]);
@@ -315,33 +330,49 @@ class AppConfig {
       'nvim/zsh/...)?',
       fallback: true,
     );
-    var repoUrl = 'https://github.com/psdkjoon/parch';
+    var dotfilesRepoUrl = 'https://github.com/psdkjoon/parch';
+    var dotfilesPath = 'dotfiles';
     if (installDotfiles) {
-      repoUrl = askString(
-        'This repo\'s URL (post phase clones it to grab dotfiles/)',
-        fallback: repoUrl,
+      dotfilesRepoUrl = askString(
+        'Dotfiles repo URL',
+        fallback: dotfilesRepoUrl,
+      );
+      dotfilesPath = askString(
+        'Path to the dotfiles inside that repo',
+        fallback: dotfilesPath,
       );
     }
 
     section('Custom tools');
-    final installCustomTools = askBool(
-      'Install your custom pdm/asd installers?',
+    var customTools = <String, Map<String, String>>{};
+    final useDefaults = askBool(
+      'Install the default tools (pdm, asd)?',
       fallback: true,
     );
-    var customInstallers = <String, String>{};
-    if (installCustomTools) {
-      customInstallers = {
-        'pdm': askString(
-          'pdm installer URL',
-          fallback:
-              'https://github.com/psdkjoon/pdm/releases/download/latest/pdm-installer-linux-x64',
-        ),
-        'asd': askString(
-          'asd installer URL',
-          fallback:
-              'https://github.com/psdkjoon/asd/releases/download/latest/installer-linux',
-        ),
+    if (useDefaults) {
+      customTools['pdm'] = {
+        'repo': 'psdkjoon/pdm',
+        'asset': 'pdm-installer-linux-x64',
       };
+      customTools['asd'] = {'repo': 'psdkjoon/asd', 'asset': 'installer-linux'};
+    }
+    final installCustomTools = askBool(
+      'Install custom tools from GitHub releases?',
+      fallback: true,
+    );
+    if (installCustomTools) {
+      while (askBool(
+        customTools.isEmpty ? 'Add a custom tool?' : 'Add another custom tool?',
+        fallback: false,
+      )) {
+        final name = askString('Tool name');
+        final repo = askString('GitHub repo (owner/repo)');
+        final asset = askString(
+          "Release asset filename, exact match (parch fetches the repo's "
+          'actual latest release, not a "latest" tag)',
+        );
+        customTools[name] = {'repo': repo, 'asset': asset};
+      }
     }
 
     section('Flutter');
@@ -350,26 +381,27 @@ class AppConfig {
       fallback: true,
     );
     var flutterUrl = '';
-    var flutterVer = await flutterVersion();
     var flutterTemplateRepo = '';
     var androidComponents = <String>[];
     if (installFlutter) {
-      flutterUrl = askString(
-        'Flutter SDK tarball URL',
-        fallback:
-            'https://pub.myket.ir/flutter_infra_release/releases/stable/linux/flutter_linux_$flutterVer-stable.tar.xz',
-      );
+      final latest = await flutterVersion();
+      final version = askString('Flutter version', fallback: latest);
+      flutterUrl =
+          'https://pub.myket.ir/flutter_infra_release/releases/stable/'
+          'linux/flutter_linux_$version-stable.tar.xz';
       flutterTemplateRepo = askString(
         'Flutter template repo URL',
         fallback: 'https://github.com/psdkjoon/flutter-tmpl',
       );
-      androidComponents = askList('Android SDK components (via `asd`)', [
-        'cmdline-tools',
-        'platform-tools',
-        'ndk',
-        'platforms',
-        'build-tools',
-      ]);
+      if (useDefaults) {
+        androidComponents = askList('Android SDK components (via `asd`)', [
+          'cmdline-tools',
+          'platform-tools',
+          'ndk',
+          'platforms',
+          'build-tools',
+        ]);
+      }
     }
 
     return AppConfig(
@@ -382,6 +414,7 @@ class AppConfig {
       encryptionEnabled: encryptionEnabled,
       useUsbKeyfile: useUsbKeyfile,
       rootDisk: rootDisk,
+      efiSize: efiSize,
       bootPart: bootPart,
       rootPart: rootPart,
       mapperName: mapperName,
@@ -398,15 +431,57 @@ class AppConfig {
       gitName: gitName,
       gitEmail: gitEmail,
       installDotfiles: installDotfiles,
-      repoUrl: repoUrl,
+      dotfilesRepoUrl: dotfilesRepoUrl,
+      dotfilesPath: dotfilesPath,
       installCustomTools: installCustomTools,
-      customInstallers: customInstallers,
+      customTools: customTools,
       installFlutter: installFlutter,
       flutterUrl: flutterUrl,
       flutterTemplateRepo: flutterTemplateRepo,
       androidComponents: androidComponents,
     );
   }
+}
+
+String partitionSuffix(String disk) {
+  final base = disk.split('/').last;
+  return RegExp(r'\d$').hasMatch(base) ? 'p' : '';
+}
+
+Future<String> pickDisk() async {
+  List<String> disks = [];
+  try {
+    final result = await Process.run('lsblk', [
+      '-dnpo',
+      'NAME,SIZE,MODEL',
+      '-e',
+      '7,11',
+    ]);
+    if (result.exitCode == 0) {
+      disks = (result.stdout as String)
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty)
+          .toList();
+    }
+  } catch (_) {}
+
+  if (disks.isEmpty) {
+    return askString(
+      'Target disk (e.g. /dev/nvme0n1)',
+      fallback: '/dev/nvme0n1',
+    );
+  }
+
+  const manualEntry = 'Enter manually';
+  final choice = askChoice('Target disk', [...disks, manualEntry]);
+  if (choice == manualEntry) {
+    return askString(
+      'Target disk (e.g. /dev/nvme0n1)',
+      fallback: '/dev/nvme0n1',
+    );
+  }
+  return choice.split(RegExp(r'\s+')).first;
 }
 
 Future<String> flutterVersion() async {
