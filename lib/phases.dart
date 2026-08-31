@@ -61,14 +61,14 @@ List<String> sessionPackages(AppConfig c) {
       'hyprpaper',
       'waybar',
       'swaync',
-      'lxqt-polkit-agent',
+      'lxqt-policykit',
       'hyprlauncher',
     ]);
   } else {
     pkgs.add('cage');
   }
   if (c.loginMethod == 'greetd') {
-    pkgs.addAll(['greetd', 'greetd-tuigreeter']);
+    pkgs.addAll(['greetd', 'greetd-tuigreet']);
   }
   return pkgs;
 }
