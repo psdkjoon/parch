@@ -1,0 +1,75 @@
+name: Build and Publish to AUR
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+
+      - run: dart pub get
+
+      - run: dart compile exe bin/parch.dart -o parch
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parch-linux-x64
+          path: parch
+
+  aur:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate PKGBUILD for this build
+        run: |
+          set -euo pipefail
+          VERSION=$(grep '^version:' pubspec.yaml | head -1 | awk '{print $2}')
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+          cat > PKGBUILD << PKGEOF
+          # Maintainer: psdk <psdkjoon@gmail.com>
+          pkgname=parch
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc="psdk's arch installer and configer"
+          arch=('x86_64')
+          url="https://github.com/${{ github.repository }}"
+          license=('MIT')
+          makedepends=('dart')
+          source=("\$pkgname-\$pkgver.tar.gz::https://github.com/${{ github.repository }}/archive/refs/heads/main.tar.gz")
+          sha256sums=('SKIP')
+
+          build() {
+            cd "\$srcdir"/*-main
+            dart pub get
+            dart compile exe bin/parch.dart -o parch
+          }
+
+          package() {
+            cd "\$srcdir"/*-main
+            install -Dm755 parch "\$pkgdir/usr/bin/parch"
+            if [ -f README.md ]; then
+              install -Dm644 README.md "\$pkgdir/usr/share/doc/\$pkgname/README.md"
+            fi
+          }
+          PKGEOF
+
+      - name: Publish to the AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v3
+        with:
+          pkgname: parch
+          pkgbuild: PKGBUILD
+          commit_username: psdkjoon
+          commit_email: psdkjoon@gmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_KEY }}
+          commit_message: "Update to ${{ env.VERSION }}"

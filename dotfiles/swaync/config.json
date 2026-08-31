@@ -1,0 +1,40 @@
+{
+  "positionX": "right",
+  "positionY": "top",
+  "control-center-positionX": "center",
+  "control-center-positionY": "center",
+  "control-center-margin-top": 100,
+  "control-center-margin-bottom": 100,
+  "control-center-margin-right": 0,
+  "control-center-margin-left": 0,
+  "ignore-gtk-theme": true,
+  "timeout": 10,
+  "hide-on-clear": true,
+  "widgets": [
+    "title",
+    "dnd",
+    "notifications",
+    "volume",
+    "mpris"
+  ],
+  "widget-config": {
+    "volume": {
+      "show-per-app": true,
+      "label": "Volume",
+      "empty-list-label": "No active sink input",
+      "expand-button-label": "⇧",
+      "collapse-button-label": "⇩",
+      "icon-size": 24,
+      "animation-type": "slide_down",
+      "animation-duration": 250
+    },
+    "mpris": {
+      "blacklist": ["playerctld"],
+      "autohide": true,
+      "show-album-art": "always",
+      "loop-carousel": false,
+      "image-size": 96,
+      "image-radius": 12
+    }
+  }
+}

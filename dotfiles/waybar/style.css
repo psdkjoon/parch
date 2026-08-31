@@ -1,0 +1,125 @@
+* {
+  border: none;
+  font-family: "Sorena";
+  font-size: 15px;
+  all: unset;
+}
+
+window#waybar {
+  background: rgba(34, 36, 54, 0);
+}
+
+tooltip {
+  background: rgba(49, 50, 68, 0.9);
+  border: 1px solid #cba6f7;
+  border-radius: 5px;
+}
+
+tooltip label {
+  color: #cba6f7;
+  font-size: 18px;
+  font-family: "JetBrainsMono NFP ExtraBold";
+}
+
+#workspaces,
+#tray,
+#clock,
+#bluetooth,
+#battery,
+#network,
+#custom-power,
+#custom-update,
+#wireplumber {
+  font-family: "JetBrainsMono NFP ExtraBold";
+  background-color: #45475a;
+  font-size: 17px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#tray {
+  color: #fab387;
+}
+
+#tray menu {
+  background: rgba(49, 50, 68, 0.9);
+  color: #cba6f7;
+  border-radius: 10px;
+  padding: 6px;
+}
+
+menu {
+  border-radius: 10px;
+  background: rgba(49, 50, 68, 0.9);
+  color: #cba6f7;
+  padding: 6px;
+  font-size: 18px;
+  font-family: "JetBrainsMono NFP ExtraBold";
+}
+
+#workspaces {
+  padding: 0px;
+}
+
+#workspaces button {
+  color: #a6e3a1;
+  background: transparent;
+  padding: 4px 4px;
+  transition:
+    color 0.3s ease,
+    text-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+#workspaces button.active {
+  color: #9399b2;
+}
+
+#workspaces button:hover {
+  text-shadow: 0 0 0 #000000;
+}
+
+#network {
+  border-radius: 10px 0px 0px 10px;
+  color: #fab387;
+}
+
+#bluetooth {
+  font-family: "JetBrainsMono NFP ExtraBold";
+  font-size: 20px;
+  color: #f2cdcd;
+  border-radius: 0px 10px 10px 0px;
+}
+
+#clock {
+  color: #74c7ec;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+#custom-power {
+  color: #cba6f7;
+  border-radius: 0px 10px 10px 0px;
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+#custom-update {
+  color: #f5e0dc;
+  border-radius: 0px;
+  font-weight: bold;
+}
+
+#wireplumber {
+  color: #94e2d5;
+}
+
+#battery {
+  color: #f9e2af;
+  border-radius: 10px 0px 0px 10px;
+  margin-left: 10px;
+  font-weight: bold;
+  font-family: "JetBrainsMono NFP ExtraBold";
+}

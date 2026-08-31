@@ -1,0 +1,152 @@
+[
+  {
+    "layer": "top",
+    "name": "bala",
+    "mode": "dock",
+    "position": "top",
+    "reload_style_on_change": true,
+    "exclusive": true,
+    "modules-left": [
+      "battery#ac",
+      "battery#bat0",
+      "hyprland/workspaces",
+      "bluetooth"
+    ],
+    "modules-center": [
+      "clock"
+    ],
+    "modules-right": [
+      "network",
+      "tray",
+      "custom/update",
+      "wireplumber",
+      "custom/power"
+    ],
+    "custom/update": {
+      "exec": "yay -Quq | wc -l",
+      "format": "{} 󰚰 ",
+      "interval": 60,
+      "on-click": "kitty -e yay -Syu"
+    },
+    "custom/power": {
+      "format": "⏻",
+      "tooltip": false,
+      "menu": "on-click",
+      "menu-file": "~/.config/waybar/power_menu.xml",
+      "menu-actions": {
+        "shutdown": "shutdown now",
+        "reboot": "reboot",
+        "lock": "hyprlock --grace 10",
+      },
+    },
+    "battery#bat0": {
+      "interval": 1,
+      "format": "{capacity}% {icon}",
+      "format-time": "{H}:{m}",
+      "format-charging": "",
+      "format-plugged": "",
+      "format-not-charging": "",
+      "format-full": "",
+      "format-icons": [
+        "󰂎",
+        "󰁺",
+        "󰁻",
+        "󰁼",
+        "󰁽",
+        "󰁾",
+        "󰁿",
+        "󰂀",
+        "󰂁",
+        "󰂂",
+        "󰁹"
+      ]
+    },
+    "battery#ac": {
+      "interval": 1,
+      "format": "",
+      "format-time": "{H}:{m}",
+      "format-charging": "{capacity}% {icon}",
+      "format-plugged": "{capacity}% {icon}",
+      "format-not-charging": "{capacity}% {icon}",
+      "format-full": "{capacity}% 󰂅",
+      "format-icons": [
+        "󰢟",
+        "󰢜",
+        "󰂆",
+        "󰂇",
+        "󰂈",
+        "󰢝",
+        "󰂉",
+        "󰢞",
+        "󰂊",
+        "󰂋",
+        "󰂅"
+      ]
+    },
+    "clock": {
+      "format": "{:%T}",
+      "timezone": "Asia/Tehran",
+      "interval": 1,
+      "tooltip-format": "{:%Y-%m-%d}",
+    },
+    "hyprland/workspaces": {
+      "format": "{icon}",
+      "format-icons": {
+        "active": "",
+        "default": "",
+        "empty": "",
+      },
+      "persistent-workspaces": {
+        "*": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+      },
+    },
+    "wireplumber": {
+      "format": "{volume}% {icon}",
+      "on-click": "pavucontrol",
+      "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%-",
+      "on-scroll-down": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+",
+      "format-muted": "",
+      "format-icons": {
+        "default": [
+          "",
+          ""
+        ],
+      },
+    },
+    "tray": {
+      "icon-size": 21,
+      "spacing": 10,
+      "icons": {
+        "Telegram": "$HOME/.local/share/icons/hicolor/16x16/apps/telegram.png"
+      }
+    },
+    "network": {
+      "format-wifi": "",
+      "format-ethernet": "󰌗",
+      "format-disconnected": "",
+      "tooltip-format-disconnected": "Error",
+      "tooltip-format-wifi": "{essid} ({signalStrength}%) ",
+      "tooltip-format-ethernet": "{ifname} 🖧",
+      "on-click": "kitty -e nmtui",
+    },
+    "bluetooth": {
+      "format-on": "󰂯",
+      "format-off": "󰂲",
+      "format-disabled": "󰂲",
+      "format-no-controller": "",
+      "format-connected-battery": "{device_battery_percentage}% 󰂯",
+      "format-alt": "{device_alias} 󰂯",
+      "tooltip-format": "Nothing connected",
+      "tooltip-format-connected": "{device_alias}",
+      "tooltip-format-enumerate-connected": "{device_alias}",
+      "tooltip-format-enumerate-connected-battery": "{device_alias}",
+      "on-click": "kitty -e bluetui",
+    },
+  },
+]

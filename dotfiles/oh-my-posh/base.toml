@@ -1,0 +1,101 @@
+console_title_template = '{{ .UserName }} with {{ .Shell }} in {{ .Folder }}'
+version = 3
+final_space = true
+
+
+
+[[blocks]]
+  type = 'prompt'
+  alignment = 'left'
+  
+  [[blocks.segments]]
+    type = 'text'
+    style = 'diamond'
+    leading_diamond = ''
+    trailing_diamond = ''
+    background = 'cyan'
+    foreground = 'black'
+    template = '󰣇 '
+    
+  [[blocks.segments]]
+    type = 'path'
+    style = 'diamond'
+    leading_diamond = ''
+    trailing_diamond = ''
+    background = 'magenta'
+    foreground = 'black'
+    template = ' {{ .Path }} '
+      [blocks.segments.properties]
+        style = 'agnoster_short'
+        max_depth = 3
+        folder_icon = ''
+        folder_separator_icon = '  '
+        home_icon = '󱂵'
+  [[blocks.segments]]
+    type = 'time'
+    style = 'diamond'
+    leading_diamond = ''
+    trailing_diamond = ''
+    background = 'blue'
+    foreground = 'black'
+      [blocks.segments.properties]
+        format = '15:04:05'
+  [[blocks.segments]]
+    type = 'battery'
+    style = 'diamond'
+    leading_diamond = ''
+    trailing_diamond = ''
+    background = 'yellow'
+    background_templates = [
+      "{{if le .Percentage 20}}red{{end}}",
+      "{{if ge .Percentage 70}}cyan{{end}}",
+      "{{if eq \"Charging\" .State.String}}green{{end}}",
+      "{{if gt .Percentage 20}}yellow{{end}}",
+    ]
+    foreground = 'black'
+    template = " {{ if not .Error }}{{if eq \"Charging\" .State.String}}󰂄{{ else if gt .Percentage 70}}󱟢{{ else if gt .Percentage 20 }}󱧥{{ else }}󰂃{{ end }} {{ .Percentage }}{{ end }} "
+    
+[[blocks]]
+  type = 'rprompt'
+  overflow = 'hidden'
+  
+  [[blocks.segments]]
+    type = 'executiontime'
+    style = 'diamond'
+    leading_diamond = ''
+    trailing_diamond = ''
+    foreground = 'yellow'
+    background = 'transparent'
+    template = ' {{ .FormattedMs }}'
+      [blocks.segments.properties]
+        threshold = 5000
+        style = 'austin'
+
+[[blocks]]
+  type = 'prompt'
+  alignment = 'left'
+  newline = true
+  [[blocks.segments]]
+    type = 'text'
+    style = 'plain'
+    background = 'transparent'
+    foreground_templates = [
+      '{{ if gt .Code 0 }}red{{ end }}',
+      '{{ if eq .Code 0 }}magenta{{ end }}'
+    ]
+    template = '    ╰╌❯'
+    
+[transient_prompt]
+  background = 'transparent'
+  foreground_templates = [
+    '{{ if gt .Code 0 }}red{{ end }}',
+    '{{ if eq .Code 0 }}magenta{{ end }}'
+  ]
+  template = '  ❯'
+[secondary_prompt]
+  background = 'transparent'
+  foreground_templates = [
+    '{{ if gt .Code 0 }}red{{ end }}',
+    '{{ if eq .Code 0 }}magenta{{ end }}'
+  ]
+  template = ' ❯❯'
