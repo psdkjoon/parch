@@ -434,7 +434,7 @@ class AppConfig {
       'pipewire',
       'pipewire-pulse',
       'wireplumber',
-      'nerd-fonts',
+      'ttf-jetbrains-mono-nerd',
       'mpd',
       'mpc',
       'rmpc',
