@@ -3,6 +3,93 @@ import 'dart:io';
 
 import 'prompt.dart';
 
+const configSchemaVersion = 1;
+
+class ConfigLoadError implements Exception {
+  final String message;
+  ConfigLoadError(this.message);
+  @override
+  String toString() => message;
+}
+
+String _reqString(Map<String, dynamic> j, String key, {String? fallback}) {
+  final v = j[key];
+  if (v == null) {
+    if (fallback != null) return fallback;
+    throw ConfigLoadError(
+      'Config is missing required field "$key". If this is an old '
+      'parch_config.json, delete it and run "parch configure" again.',
+    );
+  }
+  if (v is! String) {
+    throw ConfigLoadError('Config field "$key" should be text, got: $v');
+  }
+  return v;
+}
+
+bool _reqBool(Map<String, dynamic> j, String key, {bool? fallback}) {
+  final v = j[key];
+  if (v == null) {
+    if (fallback != null) return fallback;
+    throw ConfigLoadError(
+      'Config is missing required field "$key". If this is an old '
+      'parch_config.json, delete it and run "parch configure" again.',
+    );
+  }
+  if (v is! bool) {
+    throw ConfigLoadError('Config field "$key" should be true/false, got: $v');
+  }
+  return v;
+}
+
+List<String> _reqListString(
+  Map<String, dynamic> j,
+  String key, {
+  List<String>? fallback,
+}) {
+  final v = j[key];
+  if (v == null) {
+    if (fallback != null) return fallback;
+    throw ConfigLoadError(
+      'Config is missing required field "$key". If this is an old '
+      'parch_config.json, delete it and run "parch configure" again.',
+    );
+  }
+  if (v is! List) {
+    throw ConfigLoadError('Config field "$key" should be a list, got: $v');
+  }
+  try {
+    return List<String>.from(v);
+  } catch (_) {
+    throw ConfigLoadError(
+      'Config field "$key" should be a list of text values.',
+    );
+  }
+}
+
+Map<String, String> _reqMapString(
+  Map<String, dynamic> j,
+  String key, {
+  Map<String, String>? fallback,
+}) {
+  final v = j[key];
+  if (v == null) {
+    if (fallback != null) return fallback;
+    throw ConfigLoadError(
+      'Config is missing required field "$key". If this is an old '
+      'parch_config.json, delete it and run "parch configure" again.',
+    );
+  }
+  if (v is! Map) {
+    throw ConfigLoadError('Config field "$key" should be a map, got: $v');
+  }
+  try {
+    return Map<String, String>.from(v);
+  } catch (_) {
+    throw ConfigLoadError('Config field "$key" should map text to text.');
+  }
+}
+
 class AppConfig {
   // Identity
   String hostname;
@@ -92,86 +179,120 @@ class AppConfig {
   });
 
   Map<String, dynamic> toJson() => {
-    'hostname': hostname,
-    'username': username,
-    'timezone': timezone,
-    'locale': locale,
-    'keymap': keymap,
-    'consoleFont': consoleFont,
-    'encryptionEnabled': encryptionEnabled,
-    'useUsbKeyfile': useUsbKeyfile,
-    'rootDisk': rootDisk,
-    'efiSize': efiSize,
-    'bootPart': bootPart,
-    'rootPart': rootPart,
-    'mapperName': mapperName,
-    'usbDisk': usbDisk,
-    'usbPart': usbPart,
-    'keyfileName': keyfileName,
-    'loginMethod': loginMethod,
-    'session': session,
-    'autostartOnTty': autostartOnTty,
-    'nopasswdSudo': nopasswdSudo,
-    'basePackages': basePackages,
-    'officialPackages': officialPackages,
-    'aurPackages': aurPackages,
-    'packageHooks': packageHooks,
-    'gitName': gitName,
-    'gitEmail': gitEmail,
-    'installDotfiles': installDotfiles,
-    'dotfilesRepoUrl': dotfilesRepoUrl,
-    'dotfilesPath': dotfilesPath,
-    'installCustomTools': installCustomTools,
-    'customTools': customTools,
-    'installFlutter': installFlutter,
-    'flutterUrl': flutterUrl,
-    'flutterTemplateRepo': flutterTemplateRepo,
-    'androidComponents': androidComponents,
-  };
+        'configVersion': configSchemaVersion,
+        'hostname': hostname,
+        'username': username,
+        'timezone': timezone,
+        'locale': locale,
+        'keymap': keymap,
+        'consoleFont': consoleFont,
+        'encryptionEnabled': encryptionEnabled,
+        'useUsbKeyfile': useUsbKeyfile,
+        'rootDisk': rootDisk,
+        'efiSize': efiSize,
+        'bootPart': bootPart,
+        'rootPart': rootPart,
+        'mapperName': mapperName,
+        'usbDisk': usbDisk,
+        'usbPart': usbPart,
+        'keyfileName': keyfileName,
+        'loginMethod': loginMethod,
+        'session': session,
+        'autostartOnTty': autostartOnTty,
+        'nopasswdSudo': nopasswdSudo,
+        'basePackages': basePackages,
+        'officialPackages': officialPackages,
+        'aurPackages': aurPackages,
+        'packageHooks': packageHooks,
+        'gitName': gitName,
+        'gitEmail': gitEmail,
+        'installDotfiles': installDotfiles,
+        'dotfilesRepoUrl': dotfilesRepoUrl,
+        'dotfilesPath': dotfilesPath,
+        'installCustomTools': installCustomTools,
+        'customTools': customTools,
+        'installFlutter': installFlutter,
+        'flutterUrl': flutterUrl,
+        'flutterTemplateRepo': flutterTemplateRepo,
+        'androidComponents': androidComponents,
+      };
 
-  static AppConfig fromJson(Map<String, dynamic> j) => AppConfig(
-    hostname: j['hostname'],
-    username: j['username'],
-    timezone: j['timezone'],
-    locale: j['locale'],
-    keymap: j['keymap'],
-    consoleFont: j['consoleFont'],
-    encryptionEnabled: j['encryptionEnabled'],
-    useUsbKeyfile: j['useUsbKeyfile'],
-    rootDisk: j['rootDisk'],
-    efiSize: j['efiSize'],
-    bootPart: j['bootPart'],
-    rootPart: j['rootPart'],
-    mapperName: j['mapperName'],
-    usbDisk: j['usbDisk'],
-    usbPart: j['usbPart'],
-    keyfileName: j['keyfileName'],
-    loginMethod: j['loginMethod'],
-    session: j['session'],
-    autostartOnTty: j['autostartOnTty'],
-    nopasswdSudo: j['nopasswdSudo'],
-    basePackages: List<String>.from(j['basePackages']),
-    officialPackages: List<String>.from(j['officialPackages']),
-    aurPackages: List<String>.from(j['aurPackages']),
-    packageHooks: Map<String, String>.from(j['packageHooks']),
-    gitName: j['gitName'],
-    gitEmail: j['gitEmail'],
-    installDotfiles: j['installDotfiles'],
-    dotfilesRepoUrl: j['dotfilesRepoUrl'] ?? j['repoUrl'],
-    dotfilesPath: j['dotfilesPath'],
-    installCustomTools: j['installCustomTools'],
-    customTools: (j['customTools'] as Map<String, dynamic>? ?? {}).map(
-      (k, v) => MapEntry(k, Map<String, String>.from(v as Map)),
-    ),
-    installFlutter: j['installFlutter'],
-    flutterUrl: j['flutterUrl'],
-    flutterTemplateRepo: j['flutterTemplateRepo'],
-    androidComponents: List<String>.from(j['androidComponents']),
-  );
+  static AppConfig fromJson(Map<String, dynamic> j) {
+    final fileVersion = j['configVersion'];
+    if (fileVersion is! int || fileVersion < configSchemaVersion) {
+      stdout.writeln(
+        '(note: loading a config from an older/unversioned parch - '
+        'missing fields will fall back to defaults where possible)',
+      );
+    }
+    return AppConfig(
+      hostname: _reqString(j, 'hostname'),
+      username: _reqString(j, 'username'),
+      timezone: _reqString(j, 'timezone'),
+      locale: _reqString(j, 'locale'),
+      keymap: _reqString(j, 'keymap'),
+      consoleFont: _reqString(j, 'consoleFont'),
+      encryptionEnabled: _reqBool(j, 'encryptionEnabled'),
+      useUsbKeyfile: _reqBool(j, 'useUsbKeyfile', fallback: false),
+      rootDisk: _reqString(j, 'rootDisk'),
+      efiSize: _reqString(j, 'efiSize', fallback: '1GiB'),
+      bootPart: _reqString(j, 'bootPart'),
+      rootPart: _reqString(j, 'rootPart'),
+      mapperName: _reqString(j, 'mapperName', fallback: 'cryptroot'),
+      usbDisk: _reqString(j, 'usbDisk', fallback: ''),
+      usbPart: _reqString(j, 'usbPart', fallback: ''),
+      keyfileName: _reqString(j, 'keyfileName', fallback: 'luks.key'),
+      loginMethod: _reqString(j, 'loginMethod'),
+      session: _reqString(j, 'session'),
+      autostartOnTty: _reqBool(j, 'autostartOnTty', fallback: false),
+      nopasswdSudo: _reqBool(j, 'nopasswdSudo', fallback: false),
+      basePackages: _reqListString(j, 'basePackages'),
+      officialPackages: _reqListString(j, 'officialPackages'),
+      aurPackages: _reqListString(j, 'aurPackages', fallback: []),
+      packageHooks: _reqMapString(j, 'packageHooks', fallback: {}),
+      gitName: _reqString(j, 'gitName', fallback: ''),
+      gitEmail: _reqString(j, 'gitEmail', fallback: ''),
+      installDotfiles: _reqBool(j, 'installDotfiles', fallback: false),
+      dotfilesRepoUrl: _reqString(
+        j,
+        'dotfilesRepoUrl',
+        fallback: j['repoUrl'] is String ? j['repoUrl'] as String : '',
+      ),
+      dotfilesPath: _reqString(j, 'dotfilesPath', fallback: 'dotfiles'),
+      installCustomTools: _reqBool(j, 'installCustomTools', fallback: false),
+      customTools: (() {
+        final raw = j['customTools'];
+        if (raw == null) return <String, Map<String, String>>{};
+        if (raw is! Map) {
+          throw ConfigLoadError('Config field "customTools" should be a map.');
+        }
+        try {
+          return raw.map(
+            (k, v) => MapEntry(k as String, Map<String, String>.from(v as Map)),
+          );
+        } catch (_) {
+          throw ConfigLoadError(
+            'Config field "customTools" should map tool name to a '
+            '{repo, asset} map.',
+          );
+        }
+      })(),
+      installFlutter: _reqBool(j, 'installFlutter', fallback: false),
+      flutterUrl: _reqString(j, 'flutterUrl', fallback: ''),
+      flutterTemplateRepo: _reqString(j, 'flutterTemplateRepo', fallback: ''),
+      androidComponents: _reqListString(j, 'androidComponents', fallback: []),
+    );
+  }
 
   static Future<AppConfig> load(String path) async {
     final content = await File(path).readAsString();
-    return AppConfig.fromJson(jsonDecode(content));
+    try {
+      return AppConfig.fromJson(jsonDecode(content) as Map<String, dynamic>);
+    } on ConfigLoadError {
+      rethrow;
+    } catch (e) {
+      throw ConfigLoadError('Could not parse $path as JSON: $e');
+    }
   }
 
   Future<void> save(String path) async {
@@ -233,10 +354,14 @@ class AppConfig {
     }
 
     section('Login & session');
-    final loginMethod = askChoice('How do you want to log in?', [
-      'tty',
-      'greetd',
-    ], fallback: 1);
+    final loginMethod = askChoice(
+      'How do you want to log in?',
+      [
+        'tty',
+        'greetd',
+      ],
+      fallback: 1,
+    );
     final session = askChoice(
       loginMethod == 'greetd'
           ? 'What should greetd launch after login?'
@@ -271,49 +396,49 @@ class AppConfig {
     ]);
     final officialPackages =
         askList('Official repo packages (installed after reboot)', [
-          'git',
-          'github-cli',
-          'wget',
-          'curl',
-          'yazi',
-          'btop',
-          'ripgrep',
-          'fd',
-          'zsh',
-          'lazygit',
-          'lsd',
-          'zoxide',
-          'aria2',
-          'cloc',
-          'kitty',
-          'ffmpeg',
-          'imagemagick',
-          'bat',
-          'cava',
-          'swaync',
-          'dust',
-          'firefox',
-          'p7zip',
-          'jdk-openjdk',
-          'fzf',
-          'yt-dlp',
-          'fcitx5',
-          'fcitx5-qt',
-          'fcitx5-gtk',
-          'gnome-keyring',
-          'qt5ct',
-          'qt6ct',
-          'playerctl',
-          'bluez',
-          'bluez-utils',
-          'pipewire',
-          'pipewire-pulse',
-          'wireplumber',
-          'nerd-fonts',
-          'mpd',
-          'mpc',
-          'rmpc',
-        ]);
+      'git',
+      'github-cli',
+      'wget',
+      'curl',
+      'yazi',
+      'btop',
+      'ripgrep',
+      'fd',
+      'zsh',
+      'lazygit',
+      'lsd',
+      'zoxide',
+      'aria2',
+      'cloc',
+      'kitty',
+      'ffmpeg',
+      'imagemagick',
+      'bat',
+      'cava',
+      'swaync',
+      'dust',
+      'firefox',
+      'p7zip',
+      'jdk-openjdk',
+      'fzf',
+      'yt-dlp',
+      'fcitx5',
+      'fcitx5-qt',
+      'fcitx5-gtk',
+      'gnome-keyring',
+      'qt5ct',
+      'qt6ct',
+      'playerctl',
+      'bluez',
+      'bluez-utils',
+      'pipewire',
+      'pipewire-pulse',
+      'wireplumber',
+      'nerd-fonts',
+      'mpd',
+      'mpc',
+      'rmpc',
+    ]);
     final aurPackages = askList('AUR packages (installed via yay)', [
       'oh-my-posh',
       'hyprlauncher',
@@ -386,6 +511,13 @@ class AppConfig {
       fallback: true,
     );
     if (installCustomTools) {
+      if (!officialPackages.contains('aria2')) {
+        officialPackages.add('aria2');
+        stdout.writeln(
+          '  (added "aria2" to official packages - needed to download '
+          'custom tool releases)',
+        );
+      }
       while (askBool(
         customTools.isEmpty ? 'Add a custom tool?' : 'Add another custom tool?',
         fallback: false,
@@ -409,16 +541,30 @@ class AppConfig {
     var flutterTemplateRepo = '';
     var androidComponents = <String>[];
     if (installFlutter) {
+      final addedForFlutter = <String>[];
+      if (!officialPackages.contains('wget')) {
+        officialPackages.add('wget');
+        addedForFlutter.add('wget');
+      }
+      if (!officialPackages.contains('p7zip')) {
+        officialPackages.add('p7zip');
+        addedForFlutter.add('p7zip');
+      }
+      if (addedForFlutter.isNotEmpty) {
+        stdout.writeln(
+          '  (added ${addedForFlutter.join(', ')} to official packages - '
+          'needed to download/extract Flutter)',
+        );
+      }
       final latest = await flutterVersion();
       final version = askString('Flutter version', fallback: latest);
-      flutterUrl =
-          'https://pub.myket.ir/flutter_infra_release/releases/stable/'
+      flutterUrl = 'https://pub.myket.ir/flutter_infra_release/releases/stable/'
           'linux/flutter_linux_$version-stable.tar.xz';
       flutterTemplateRepo = askString(
         'Flutter template repo URL',
         fallback: 'https://github.com/psdkjoon/flutter-tmpl',
       );
-      if (useDefaults) {
+      if (customTools.containsKey('asd')) {
         androidComponents = askList('Android SDK components (via `asd`)', [
           'cmdline-tools',
           'platform-tools',
@@ -528,7 +674,7 @@ Future<String> flutterVersion() async {
     if (response.statusCode == 200) {
       final body = await response.transform(utf8.decoder).join();
       final json = jsonDecode(body);
-      version = json['releases'][0]['version'];
+      version = json['releases'][0]['version'] as String;
     }
   } catch (_) {
   } finally {

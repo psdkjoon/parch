@@ -14,7 +14,8 @@ void printUsage() {
   stderr.writeln('  post       Run after first reboot, as your new user');
   stderr.writeln('');
   stderr.writeln('If no config file exists yet, "live"/"chroot"/"post" will');
-  stderr.writeln('run the interactive questionnaire first and save it for you.');
+  stderr
+      .writeln('run the interactive questionnaire first and save it for you.');
 }
 
 String configPathFromArgs(List<String> args) {
@@ -45,26 +46,34 @@ Future<void> main(List<String> args) async {
   final phase = args.first;
   final configPath = configPathFromArgs(args);
 
-  switch (phase) {
-    case 'configure':
-      final config = await AppConfig.interactive();
-      await config.save(configPath);
-      stdout.writeln('\nSaved $configPath');
-      break;
-    case 'live':
-      final config = await loadOrConfigure(configPath);
-      await phaseLive(config, configPath);
-      break;
-    case 'chroot':
-      final config = await loadOrConfigure(configPath);
-      await phaseChroot(config, configPath);
-      break;
-    case 'post':
-      final config = await loadOrConfigure(configPath);
-      await phasePostReboot(config, configPath);
-      break;
-    default:
-      printUsage();
-      exit(1);
+  try {
+    switch (phase) {
+      case 'configure':
+        final config = await AppConfig.interactive();
+        await config.save(configPath);
+        stdout.writeln('\nSaved $configPath');
+        break;
+      case 'live':
+        final config = await loadOrConfigure(configPath);
+        await phaseLive(config, configPath);
+        break;
+      case 'chroot':
+        final config = await loadOrConfigure(configPath);
+        await phaseChroot(config, configPath);
+        break;
+      case 'post':
+        final config = await loadOrConfigure(configPath);
+        await phasePostReboot(config, configPath);
+        break;
+      default:
+        printUsage();
+        exit(1);
+    }
+  } on CommandFailed catch (e) {
+    stderr.writeln('\n!! Aborting: $e');
+    exit(e.code == 0 ? 1 : e.code);
+  } on ConfigLoadError catch (e) {
+    stderr.writeln('!! $e');
+    exit(1);
   }
 }

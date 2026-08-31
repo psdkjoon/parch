@@ -4,16 +4,28 @@ import 'dart:io';
 import 'config.dart';
 import 'prompt.dart';
 
+class CommandFailed implements Exception {
+  final String cmd;
+  final int code;
+  CommandFailed(this.cmd, this.code);
+  @override
+  String toString() => 'Command failed ($code): $cmd';
+}
+
 Future<void> sh(String cmd, {bool check = true}) async {
   stdout.writeln('\n\$ $cmd');
-  final proc = await Process.start('bash', [
-    '-c',
-    cmd,
-  ], mode: ProcessStartMode.inheritStdio);
+  final proc = await Process.start(
+    'bash',
+    [
+      '-c',
+      cmd,
+    ],
+    mode: ProcessStartMode.inheritStdio,
+  );
   final code = await proc.exitCode;
   if (check && code != 0) {
     stderr.writeln('!! Command failed ($code): $cmd');
-    exit(code);
+    throw CommandFailed(cmd, code);
   }
 }
 
@@ -136,31 +148,48 @@ Future<void> phaseLive(AppConfig c, String configPath) async {
   } else {
     rootMapped = c.rootPart;
   }
-  await sh('mkfs.ext4 $rootMapped');
-  await sh('mount $rootMapped /mnt');
-  await sh('mount -m ${c.bootPart} /mnt/boot');
 
-  if (c.encryptionEnabled && c.useUsbKeyfile) {
-    section('LUKS2 keyfile on USB');
-    await sh('mkfs.fat -F32 ${c.usbPart}');
-    await sh('mount -m ${c.usbPart} /mnt/keyusb');
-    await sh(
-      'dd if=/dev/urandom of=/mnt/keyusb/${c.keyfileName} '
-      'bs=4096 count=1',
+  try {
+    await sh('mkfs.ext4 $rootMapped');
+    await sh('mount $rootMapped /mnt');
+    await sh('mount -m ${c.bootPart} /mnt/boot');
+
+    if (c.encryptionEnabled && c.useUsbKeyfile) {
+      section('LUKS2 keyfile on USB');
+      await sh('mkfs.fat -F32 ${c.usbPart}');
+      await sh('mount -m ${c.usbPart} /mnt/keyusb');
+      await sh(
+        'dd if=/dev/urandom of=/mnt/keyusb/${c.keyfileName} '
+        'bs=4096 count=1',
+      );
+      await sh('chmod 000 /mnt/keyusb/${c.keyfileName}');
+      await sh(
+        'cryptsetup luksAddKey ${c.rootPart} '
+        '/mnt/keyusb/${c.keyfileName}',
+      );
+      await sh('umount /mnt/keyusb');
+    }
+
+    section('Base install');
+    await sh('pacstrap -K /mnt ${c.basePackages.join(' ')} base-devel');
+    await sh('genfstab -U /mnt >> /mnt/etc/fstab');
+
+    await carryForward(configPath, '/mnt/root');
+  } catch (e) {
+    stderr.writeln(
+      '\n!! Failed partway through ($e) - attempting to unwind mounts/LUKS '
+      'so a retry starts from a clean state...',
     );
-    await sh('chmod 000 /mnt/keyusb/${c.keyfileName}');
-    await sh(
-      'cryptsetup luksAddKey ${c.rootPart} '
-      '/mnt/keyusb/${c.keyfileName}',
+    await sh('umount -R /mnt', check: false);
+    if (c.encryptionEnabled) {
+      await sh('cryptsetup close ${c.mapperName}', check: false);
+    }
+    stderr.writeln(
+      '!! Cleaned up what we could. Re-check "lsblk" and '
+      '"cryptsetup status ${c.mapperName}" before retrying.',
     );
-    await sh('umount /mnt/keyusb');
+    exit(1);
   }
-
-  section('Base install');
-  await sh('pacstrap -K /mnt ${c.basePackages.join(' ')} base-devel');
-  await sh('genfstab -U /mnt >> /mnt/etc/fstab');
-
-  await carryForward(configPath, '/mnt/root');
 
   stdout.writeln(
     '\nDone. Now:\n'
@@ -197,9 +226,9 @@ Future<void> phaseChroot(AppConfig c, String configPath) async {
   await sh("sed -i 's/^MODULES=.*/MODULES=(vfat fat)/' /etc/mkinitcpio.conf");
   final hooks = c.encryptionEnabled
       ? 'base systemd autodetect microcode modconf kms keyboard '
-            'sd-vconsole block sd-encrypt filesystems fsck'
+          'sd-vconsole block sd-encrypt filesystems fsck'
       : 'base systemd autodetect microcode modconf kms keyboard '
-            'sd-vconsole block filesystems fsck';
+          'sd-vconsole block filesystems fsck';
   await sh("sed -i 's/^HOOKS=.*/HOOKS=($hooks)/' /etc/mkinitcpio.conf");
 
   section('Packages (official repo, including session/login extras)');
@@ -220,11 +249,19 @@ Future<void> phaseChroot(AppConfig c, String configPath) async {
   } else if (c.autostartOnTty) {
     final home = '/home/${c.username}';
     await sh('mkdir -p $home');
-    final snippet =
-        '\nif [ -z "\$DISPLAY" ] && [ "\$(tty)" = "/dev/tty1" ]; '
+    final snippet = '\nif [ -z "\$DISPLAY" ] && [ "\$(tty)" = "/dev/tty1" ]; '
         'then\n  exec ${sessionCommand(c)}\nfi\n';
-    await File('$home/.zprofile').writeAsString(snippet, mode: FileMode.append);
-    await sh('chown ${c.username}:${c.username} $home/.zprofile');
+    final zprofile = File('$home/.zprofile');
+    final existing =
+        await zprofile.exists() ? await zprofile.readAsString() : '';
+    if (existing.contains(sessionCommand(c))) {
+      stdout.writeln(
+        '  (skipping: $home/.zprofile already has an autostart block)',
+      );
+    } else {
+      await zprofile.writeAsString(snippet, mode: FileMode.append);
+      await sh('chown ${c.username}:${c.username} $home/.zprofile');
+    }
   }
 
   section('Bootloader');
@@ -246,14 +283,12 @@ Future<void> phaseChroot(AppConfig c, String configPath) async {
   if (!c.encryptionEnabled) {
     options = 'root=UUID=$rootUuid rw quiet';
   } else if (c.useUsbKeyfile) {
-    options =
-        'rd.luks.name=$rootUuid=${c.mapperName} '
+    options = 'rd.luks.name=$rootUuid=${c.mapperName} '
         'rd.luks.key=$rootUuid=/${c.keyfileName}:UUID=$usbUuid '
         'rd.luks.options=$rootUuid=keyfile-timeout=10s '
         'root=/dev/mapper/${c.mapperName} rw quiet';
   } else {
-    options =
-        'rd.luks.name=$rootUuid=${c.mapperName} '
+    options = 'rd.luks.name=$rootUuid=${c.mapperName} '
         'root=/dev/mapper/${c.mapperName} rw quiet';
   }
 
